@@ -189,7 +189,7 @@ classdef jl
             jl.set('julia_bin', exe);
 
             % get JULIA_HOME
-            jlhome = jl.eval_with_exe('unsafe_string(Base.JLOptions().julia_home)');
+            jlhome = jl.eval_with_exe('unsafe_string(Base.JLOptions().julia_bindir)');
             assert(exist(jlhome, 'dir') == 7);
             jl.set('julia_home', jlhome);
 
@@ -203,8 +203,8 @@ classdef jl
             jl.set('is_debug', dbg);
 
             % check if threading is enabled
-            thr = jl.eval_with_exe('ccall(:jl_threading_enabled, Cint, ()) != 0');
-            jl.set('threading_enabled', thr);
+%             thr = jl.eval_with_exe('ccall(:jl_threading_enabled, Cint, ()) != 0');
+            jl.set('threading_enabled', 'false');
 
             % get include directory
             incdir = fullfile(fileparts(jlhome), 'include', 'julia');
@@ -217,7 +217,7 @@ classdef jl
             else
                 lib_base = 'julia';
             end
-            lib_path = jl.eval_with_exe(sprintf('Libdl.dlpath(\\\"lib%s\\\")', lib_base));
+            lib_path = jl.eval_with_exe(sprintf('(using Libdl; dlpath(\\\"lib%s\\\"))', lib_base));
             if ispc
                 lib_dir = fullfile(jlhome, '..', 'lib');
             else
@@ -400,7 +400,9 @@ classdef jl
                 save_ld_lib_path = getenv('LD_LIBRARY_PATH');
                 setenv LD_LIBRARY_PATH;
             end
-            [err, val] = system(sprintf('"%s" -e "println(%s)"', exe, expr));
+            execution = sprintf('"%s" -e "println(%s)"', exe, expr);
+            disp(execution)
+            [err, val] = system(execution);
             if ~ispc
                 % restore the LD_LIBRARY_PATH
                 setenv('LD_LIBRARY_PATH', save_ld_lib_path);
